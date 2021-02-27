@@ -1,0 +1,392 @@
+---
+title: <b> Suicide Rates Overview 1985 to 2016 </b>
+author: "Muhammad Wildan Firdaus"
+date: "`r format (Sys.Date())`"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    toc_float:
+      collapsed: no
+    df_print: paged
+    theme: flatly
+    highlight: pygments
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+# **Overview** {.tabset}
+## What is Suicide ?
+Suicide is death caused by injuring oneself with the intent to die. A suicide attempt is when someone harms themselves with the intent to end their life, but they do not die as a result of their actions. Several factors can increase the risk for suicide and protect against it. Suicide is connected to other forms of injury and violence, and causes serious health and economic consequences.
+
+## About This Project
+In this small project, we will explore dataset about suicides rate from 1985 to 2016. This dataset is contains several variabels or columns that will be used as a reference in the process of extracting valuable information.
+
+## Objectives
+Unfortunately, not all information in the dataset will be explored in this project. However, we will try to set up simple information goals that will be the basis for working on this project. These objectives are :  
+
+1. Knowing the age group, gender, generation and year with the highest suicides in the world.    
+2. Understanding simple statistics information from the age group, gender, generation and year with the highest suicides in the world.  
+3. Knowing the country with the highest suicides.  
+4. Knowing suicides by the age group, gender, generation and year from countries with the most suicides.  
+5. Understanding simple statistics information from countries with the most suicides.
+
+# **Input Data**
+## Data Inspection
+```{r}
+# Read data
+data <- read.csv("suicide_rate_overview_1985to2016.csv", sep =",")
+data
+```
+
+```{r}
+dim(data)
+```
+
+```{r}
+names(data)
+```
+From our inspection we can conclude :
+
+1. This dataset contain 27820 of rows and 12 of coloumns
+2. Each of column name : "ï..country", "year", "sex", "age", "suicides_no", "population", "suicides.100k.pop", "country.year", "HDI.for.year", "gdp_for_year....", "gdp_per_capita...." and "generation".       
+
+## Data Cleansing dan Coertions
+### Looking for Missing Value in each columns
+```{r}
+colSums(is.na(data))
+```
+```{r}
+mean(is.na(data$HDI.for.year))*100
+```
+From NA checking above, `HDI.for.year` column has more than 50% missing value. So, drop columns with more 50% missing values using package `dplyr`.  
+```{r}
+library(dplyr)
+```
+
+```{r}
+data <- data %>% 
+  select(-c(HDI.for.year, country.year))
+
+head(data)
+```
+`country.year` columns is not contain valuable information because it was represented by `year` and `country` columns.  
+
+### Check the data type for each columns
+```{r}
+str(data)
+```
+### Convert data type and name into correct ways
+```{r}
+data <- data %>% 
+  rename("country" = "ï..country",
+         "suicides(/100k.pop)" = "suicides.100k.pop",
+         "gdp.peryear($)" = "gdp_for_year....",
+         "gdp.percapita($)" = "gdp_per_capita....") %>% 
+  mutate_at(c("country","sex", "age", "generation"), as.factor) %>%
+  # Adjust factor levels in "generation" columns
+  mutate(generation = factor(generation, levels = c("G.I. Generation", 
+                                                    "Silent",
+                                                    "Boomers", 
+                                                    "Generation X", 
+                                                    "Millenials",
+                                                    "Generation Z"))) %>%
+  # Adjust factor levels in "age" columns
+  mutate(age = factor(age, levels = c("5-14 years",
+                                      "15-24 years",
+                                      "25-34 years",
+                                      "35-54 years",
+                                      "55-74 years",
+                                      "75+ years"))) %>% 
+  mutate(`gdp.peryear($)` = as.numeric(gsub(",","", `gdp.peryear($)`,fixed = T)))
+```
+
+```{r}
+levels(data$age)
+levels(data$generation)
+```
+
+***American Generations Timeline***
+
+Though there is a consensus on the general time period for generations, there is not an agreement on the exact year that each generation begins and ends.
+
+**1. GI Generation** <br />
+Born 1901-1924 (Age 90+) <br />
+*They were teenagers during the Great Depression and fought in World War II. Sometimes called the greatest generation (following a book by journalist Tom Brokaw) or the swing generation because of their jazz music.
+
+**2. Silent Generation** <br />
+Born 1925-1942 (Age 72-89) <br />
+*They were too young to see action in World War II and too old to participate in the fun of the Summer of Love. This label describes their conformist tendencies and belief that following the rules was a sure ticket to success.
+
+**3. Baby Boomers** <br />
+Born 1943-1964 (Age 50-71) <br />
+*The boomers were born during an economic and baby boom following World War II. These hippie kids protested against the Vietnam War and participated in the civil rights movement, all with rock 'n' roll music blaring in the background.
+
+**4. Generation X** <br />
+Born 1965-1979 (Age 35-49) <br />
+*They were originally called the baby busters because fertility rates fell after the boomers. As teenagers, they experienced the AIDs epidemic and the fall of the Berlin Wall. Sometimes called the MTV Generation, the "X" in their name refers to this generation's desire not to be defined.
+
+**5. Millennials** <br />
+Born 1980-2000 (Age 14-34) <br />
+*They experienced the rise of the Internet, Sept. 11 and the wars that followed. Sometimes called Generation Y. Because of their dependence on technology, they are said to be entitled and narcissistic.
+
+**6. Generation Z** <br />
+Born 2001-2013 (Age 1-13) <br />
+*These kids were the first born with the Internet and are suspected to be the most individualistic and technology-dependent generation. Sometimes referred to as the iGeneration.
+
+source : https://www.npr.org/
+
+### Filter data with low information
+In this case, data in 2016 has low information. So, we will drop the all data in 2016.
+```{r}
+data %>%  
+  group_by(year) %>% 
+  summarise(n = n())
+```
+
+```{r}
+data <- data %>% 
+  filter(year != 2016)
+```
+
+## Summary {.tabset}
+### Statistic
+```{r}
+summary(data)
+```
+
+### Data structure
+```{r}
+str(data)
+```
+**Variable explanation**
+
+1. `country` : The name of the country that listed in the dataset.  
+2. `year` (1985-2016) :   
+3. `sex` : Gender (male and female).  
+4. `age` : Age data which is formed into age groups (factor).  
+5. `suicide_no` : Incident case number.  
+6. `population` : A group of individuals of the same species living and interbreeding within a given area. In this data, population depends on country, year, sex, age and generation.  
+7. `suicides(/100k.pop)` : Number of suicides per 100,000 of population.  
+8. `gdp.peryear($)` : The total monetary or market value of all the finished goods and services produced within a country's borders in a specific time period (based on year).  
+9. `gdp.percapita($)` : A measure of a country's economic output that accounts for its number of people. It divides the country's gross domestic product by its total population.  
+10. `generation` : All of the people born and living at about the same time, regarded collectively.
+
+### Country list
+```{r}
+# number of countries
+length(unique(data$country))
+
+# country list
+unique(data$country)
+```
+There are **100 countries** in dataset, but not all countries in the world are listed in this dataset.
+ 
+## {.unlisted .unnumbered}
+For data inspection and cleansing above, we can conclude :  
+
+1. This data *before cleansing* contains 27,820 of rows and 12 of columns and the data *after cleansing* contains 27,660 of rows and 10 of columns.
+2. There are 100 countries in dataset.  
+3. This dataset taken from 1985 to 2016 (2016 was dropped at data cleansing session above), but in this project will have started from the 1985 to 2015.  
+4. The age and generation column are grouped into 6 levels.
+
+
+# **Data Exploration**
+In this section, we will try to find the answers of information objectives that have been defined above.
+
+## World {.tabset .tabset-fade}
+### Year
+```{r}
+worldyear <- data %>% 
+  group_by(year) %>% 
+  summarise(sum_suicides = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicides) %>% 
+  mutate(year = as.factor(year))
+
+worldyear
+
+# visualization
+library(ggplot2)
+worldyear %>% 
+  ggplot(aes(x = sum_suicides, y = reorder(year, sum_suicides), fill = year)) +
+  geom_bar(stat = "identity") +
+  theme(legend.position = "none")
+```
+
+We can see that the year with *the highest number of suicides* ***(14,660.26/100,000 of population)*** *is in* **1995**.
+
+**Descriptive Statistics**
+```{r}
+summaryyear <- data %>% 
+  group_by(year) %>% 
+  summarise(sum_suicides = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicides)
+
+summary(summaryyear$sum_suicides)
+```
+
+1. **The average of annual suicide rate** in 100 countries from 1985 to 2015 is **11,432.14/100,000 of population**.  
+2. The **smallest number** of suicide in 100 countries from 1985 to 2015 is **6.580/100,000 of population** that occured in **1986** (See the dataframe above).  
+3. The **Highest number** of suicide in 100 countries from 1985 to 2015 is **14.660/100,000 of population** that occured in **1995** (See the dataframe above).  
+
+### Sex
+```{r}
+worldsex <- data %>% 
+  group_by(sex) %>% 
+  summarise(sum_suicides = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicides)
+
+worldsex
+
+# visualization
+y <- worldsex$sum_suicides
+z <- worldsex$sex
+
+piepercent <- round(100*y/sum(y), 1)
+
+pie(y, labels = piepercent, main = "City pie chart",col = rainbow(length(y)))
+legend("topright", c("Male","Female"), cex = 0.8,
+   fill = rainbow(length(y)))
+```
+We can see that the sex with *the highest number of suicide is Male* ***(279,767.16/100,000 of population or 78.9% of total suicide)*** and and female take up 21.1% suicide of total suicide (74,629.28/100,000 of population). 
+
+### Age Group
+```{r}
+data %>% 
+  group_by(age) %>% 
+  summarise(sum_suicides = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicides)
+```
+We can see that the age group with *the highest number of suicides* ***(110,532.19/100,000 of population)*** *is* **75+ years**.
+
+### Generation
+```{r}
+data %>% 
+  group_by(generation) %>% 
+  summarise(sum_suicides = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicides)
+```
+We can see that the generation with *the highest number of suicides* ***(116,548.73	/100,000 of population)*** *is* **Silent** *generation*.
+
+
+## Country with the highest number of suicides {.tabset .tabset-fade}
+```{r}
+data %>% 
+  group_by(country) %>% 
+  summarise(sum_suicide = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicide) %>% 
+  head(3)
+```
+We can see the country that have the highest suicides from 1985 to 2015 is **Russian Federation**. Now, we will explore the suicide data in Russian Federation.
+
+### Year
+```{r}
+data %>% 
+  filter(country == "Russian Federation") %>% 
+  group_by(year) %>% 
+  summarise(sum_suicide = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicide)
+```
+In **1994**, the number of suicides reached **567.64/100,000 of population**. This is the highest number of suicides in Russia Federation.
+
+### Sex
+```{r}
+data %>% 
+  filter(country == "Russian Federation",
+         year == 1994) %>% 
+  group_by(sex) %>% 
+  summarise(sum_suicide = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicide)
+```
+Based on data on suicides in 1994 in Russia which were then grouped by gender, the highest number of suicides occurred in **male (477.82/100,000 of population)**. And, the number of cases of suicide in **women** is **89.82/100,000 of population**.  
+
+The tabset below will explain further about the distribution of data on suicide in 1994 at Russian Federation which were grouped into 3 gender groups (Male, Female and Both)
+
+### {.tabset .unlisted .unnumbered}
+#### Male & Female
+```{r}
+data %>% 
+   filter(country == "Russian Federation",
+         year == 1994) %>% 
+  group_by(age) %>% 
+  summarise(sum_suicide = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicide)
+```
+The data above show that the age group with the highest suicides is **75+ years**. Continued by finding out the generation with the most suicides in the +75 years age group from both genders  
+
+```{r}
+data %>% 
+   filter(country == "Russian Federation",
+         year == 1994,
+         age == "75+ years") %>% 
+  group_by(generation) %>% 
+  summarise(sum_suicide = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicide)
+```
+**G.I. Generation** is the generation with the most suicides in the +75 years age group from both genders (142.31/100,000 of population).  
+
+#### Male
+```{r}
+data %>% 
+  filter(country == "Russian Federation",
+         year == 1994,
+         sex == "male") %>% 
+  group_by(age) %>% 
+  summarise(sum_suicide = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicide)
+```
+The data above show that the age group with the highest suicides is **35-54 years**. Continued by finding out the generation with the most suicides in the 35-54 years age group from male.    
+
+```{r}
+data %>% 
+  filter(country == "Russian Federation",
+         year == 1994,
+         sex == "male",
+         age == "35-54 years") %>% 
+  group_by(generation) %>% 
+  summarise(sum_suicide = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicide)
+```
+**Boomers** is the generation with the most suicides in the 35-54 years age group from male (142.31/100,000 of population). 
+
+#### Female
+```{r}
+data %>% 
+  filter(country == "Russian Federation",
+         year == 1994,
+         sex == "female") %>% 
+  group_by(age) %>% 
+  summarise(sum_suicide = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicide)
+```
+The data above show that the age group with the highest suicides is **75+ years**. Continued by finding out the generation with the most suicides in the 75+ years age group from female.  
+
+```{r}
+data %>% 
+  filter(country == "Russian Federation",
+         year == 1994,
+         sex == "male",
+         age == "75+ years") %>% 
+  group_by(generation) %>% 
+  summarise(sum_suicide = sum(`suicides(/100k.pop)`)) %>% 
+  arrange(-sum_suicide)
+```
+**G.I. Generation** is the generation with the most suicides in the +75 years age group from female (142.31/100,000 of population). 
+
+# **Conclusion**
+
+Suicide occurs more often in older than in younger people, but is still one of the leading causes of death in late childhood and adolescence worldwide. From this dataset, the most cases of suicide in the world from 1985 to 2015 occurred in **1995**. In addition, from that time period, the sex with the most suicides is **male**. The age group with the most suicides is **+75 years**.  In the last, The **silent** generation became the generation with the highest suicides from that period of the year.
+
+This dataset proves that **Russian Federation** was the country with the most suicides from 1985 to 2015. Suicide cases in Russia reached 11,305.13/100,000 of population (1985-2015). From that time period, the year **1994** became the most reported suicide cases in Russian Federation (567.64/100,000 of population), **447.82**/100,000 of population of these cases were from men and **89.82**/100,000 of population were from women. The **+75 years** age group accounts for the largest number of cases and is dominated by the **G.I. generation**.  
+
+
+# Reference  
+- https://www.kaggle.com/russellyates88/suicide-rates-overview-1985-to-2016  
+- https://www.npr.org/2014/10/06/349316543/don-t-label-me-origins-of-generational-names-and-why-we-use-them  
+- https://www.cdc.gov/violenceprevention/suicide/fastfact.html
+- https://www.frontiersin.org/articles/10.3389/fpsyt.2018.00540/full
+
