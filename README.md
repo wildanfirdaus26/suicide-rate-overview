@@ -16,3 +16,7 @@ Unfortunately, not all information in the dataset will be explored in this proje
 3. Knowing the country with the highest suicides.  
 4. Knowing suicides by the age group, gender, generation and year from countries with the most suicides.  
 5. Understanding simple statistics information from countries with the most suicides.  
+
+# RPubs
+You can see better results of this report through publication at Rpubs  
+https://rpubs.com/wildanfirr/suicide_rates_overview_1985to2016
